@@ -1,0 +1,216 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+  <style>
+    .converter-container {
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+    .converter-container h2 {
+      text-align: center;
+      color: #333;
+    }
+    .timezone-group {
+      margin: 15px 0;
+    }
+    .timezone-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .timezone-group select, .timezone-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    .slider-group {
+      margin: 20px 0;
+    }
+    .slider-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .slider-group input[type="range"] {
+      width: 100%;
+    }
+    .error {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+  <div class="converter-container">
+    <h2>Created By Overking</h2>
+    <div class="timezone-group">
+      <label for="timezone1">Pilih Zona Waktu Pertama:</label>
+      <select id="timezone1">
+        <option value="UTC">UTC</option>
+        <option value="Asia/Jakarta">WIB (Asia/Jakarta)</option>
+        <!-- Opsi zona waktu lainnya akan diisi oleh JavaScript -->
+      </select>
+    </div>
+    <div class="timezone-group">
+      <label for="timeInput1">Waktu (Zona Waktu Pertama):</label>
+      <input type="text" id="timeInput1" placeholder="Contoh: 06:00 AM" value="06:00 AM">
+    </div>
+    <div class="slider-group">
+      <label for="timeSlider1">Atur Waktu dengan Slider (Zona Waktu Pertama):</label>
+      <input type="range" id="timeSlider1" min="0" max="1439" value="360" step="1">
+    </div>
+    <div class="timezone-group">
+      <label for="timezone2">Pilih Zona Waktu Kedua:</label>
+      <select id="timezone2">
+        <option value="Asia/Jakarta">WIB (Asia/Jakarta)</option>
+        <option value="UTC">UTC</option>
+        <!-- Opsi zona waktu lainnya akan diisi oleh JavaScript -->
+      </select>
+    </div>
+    <div class="timezone-group">
+      <label for="timeInput2">Waktu (Zona Waktu Kedua):</label>
+      <input type="text" id="timeInput2" placeholder="Contoh: 01:00 PM" value="01:00 PM">
+    </div>
+    <div class="slider-group">
+      <label for="timeSlider2">Atur Waktu dengan Slider (Zona Waktu Kedua):</label>
+      <input type="range" id="timeSlider2" min="0" max="1439" value="780" step="1">
+    </div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    // Daftar semua zona waktu dari Moment.js
+    const timezones = moment.tz.names();
+    const select1 = document.getElementById('timezone1');
+    const select2 = document.getElementById('timezone2');
+    const timeInput1 = document.getElementById('timeInput1');
+    const timeInput2 = document.getElementById('timeInput2');
+    const timeSlider1 = document.getElementById('timeSlider1');
+    const timeSlider2 = document.getElementById('timeSlider2');
+    const errorDisplay = document.getElementById('error');
+
+    // Isi dropdown dengan semua zona waktu
+    timezones.forEach(tz => {
+      const option1 = document.createElement('option');
+      const option2 = document.createElement('option');
+      option1.value = tz;
+      option1.text = tz;
+      option2.value = tz;
+      option2.text = tz;
+      select1.appendChild(option1);
+      select2.appendChild(option2);
+    });
+
+    // Set default values
+    select1.value = 'UTC';
+    select2.value = 'Asia/Jakarta';
+    timeInput1.value = '06:00 AM'; // UTC 6:00 AM
+    timeSlider1.value = 360; // 6:00 AM = 6 * 60 minutes
+    timeInput2.value = '01:00 PM'; // WIB 1:00 PM
+    timeSlider2.value = 780; // 1:00 PM = (12 + 1) * 60 minutes
+
+    // Fungsi untuk mengonversi menit ke format 12 jam dengan AM/PM
+    function minutesTo12Hour(minutes) {
+      minutes = ((minutes % 1440) + 1440) % 1440; // Pastikan dalam rentang 0-1439
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const adjustedHours = hours % 12 || 12; // Konversi 0 ke 12 untuk AM/PM
+      return `${String(adjustedHours).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${period}`;
+    }
+
+    // Fungsi untuk mengonversi format 12 jam ke menit
+    function parse12HourToMinutes(timeStr) {
+      const regex = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i;
+      const match = timeStr.match(regex);
+      if (!match) return null;
+
+      let hours = parseInt(match[1]);
+      const minutes = parseInt(match[2]);
+      const period = match[3].toUpperCase();
+
+      if (hours < 1 || hours > 12 || minutes > 59) return null;
+
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+
+      return hours * 60 + minutes;
+    }
+
+    // Fungsi untuk update waktu berdasarkan zona pertama
+    function updateFromZone1(source = 'slider') {
+      let minutes;
+      const timezone1 = select1.value;
+      const timezone2 = select2.value;
+
+      if (source === 'input') {
+        minutes = parse12HourToMinutes(timeInput1.value);
+        if (minutes === null) {
+          errorDisplay.textContent = 'Format waktu zona pertama salah! Gunakan format seperti 06:00 AM';
+          return;
+        }
+        timeSlider1.value = minutes; // Sinkronkan slider zona pertama
+      } else {
+        minutes = parseInt(timeSlider1.value);
+        timeInput1.value = minutesTo12Hour(minutes); // Sinkronkan input zona pertama
+      }
+
+      // Konversi waktu zona pertama ke zona kedua
+      const time1 = moment.tz(timezone1).startOf('day').add(minutes, 'minutes');
+      const time2 = time1.clone().tz(timezone2);
+      const minutes2 = (time2.hours() * 60 + time2.minutes()) % 1440; // Modulo untuk wrap-around
+      timeInput2.value = minutesTo12Hour(minutes2);
+      timeSlider2.value = minutes2; // Sinkronkan slider zona kedua
+
+      errorDisplay.textContent = ''; // Hapus pesan error
+    }
+
+    // Fungsi untuk update waktu berdasarkan zona kedua
+    function updateFromZone2(source = 'slider') {
+      let minutes;
+      const timezone1 = select1.value;
+      const timezone2 = select2.value;
+
+      if (source === 'input') {
+        minutes = parse12HourToMinutes(timeInput2.value);
+        if (minutes === null) {
+          errorDisplay.textContent = 'Format waktu zona kedua salah! Gunakan format seperti 01:00 PM';
+          return;
+        }
+        timeSlider2.value = minutes; // Sinkronkan slider zona kedua
+      } else {
+        minutes = parseInt(timeSlider2.value);
+        timeInput2.value = minutesTo12Hour(minutes); // Sinkronkan input zona kedua
+      }
+
+      // Konversi waktu zona kedua ke zona pertama
+      const time2 = moment.tz(timezone2).startOf('day').add(minutes, 'minutes');
+      const time1 = time2.clone().tz(timezone1);
+      const minutes1 = (time1.hours() * 60 + time1.minutes()) % 1440; // Modulo untuk wrap-around
+      timeInput1.value = minutesTo12Hour(minutes1);
+      timeSlider1.value = minutes1; // Sinkronkan slider zona pertama
+
+      errorDisplay.textContent = ''; // Hapus pesan error
+    }
+
+    // Event listener untuk zona waktu pertama
+    timeSlider1.addEventListener('input', () => updateFromZone1('slider'));
+    timeInput1.addEventListener('input', () => updateFromZone1('input'));
+
+    // Event listener untuk zona waktu kedua
+    timeSlider2.addEventListener('input', () => updateFromZone2('slider'));
+    timeInput2.addEventListener('input', () => updateFromZone2('input'));
+
+    // Event listener untuk dropdown (memperbarui waktu berdasarkan zona pertama)
+    select1.addEventListener('change', () => updateFromZone1('slider'));
+    select2.addEventListener('change', () => updateFromZone1('slider'));
+
+    // Inisialisasi waktu saat halaman dimuat
+    updateFromZone1('slider');
+  </script>
