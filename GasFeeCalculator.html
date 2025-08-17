@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+  <style>
+    .gas-container {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .network-box {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .network-box h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: #333;
+    }
+    .gas-prices p, .calculator-result p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .calculator-box {
+      margin: 20px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .explanation-box {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+    .explanation-box h3 {
+      font-size: 16px;
+      color: #333;
+      margin: 0 0 10px;
+    }
+    .explanation-box p, .explanation-box ul {
+      font-size: 14px;
+      color: #555;
+      margin: 10px 0;
+    }
+    .explanation-box ul {
+      padding-left: 20px;
+    }
+    .low-gas-info {
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+    }
+    .loading {
+      font-style: italic;
+      color: #888;
+    }
+    .error {
+      color: red;
+    }
+    select, input[type="number"] {
+      padding: 8px;
+      font-size: 14px;
+      margin-bottom: 10px;
+      width: 100%;
+      border-radius: 5px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+  
+  </head>
+<body>
+
+   
+
+  <div class="gas-container">
+    <h3>Created by Overking Labs</h3>
+    <div>
+       
+      <label for="chainSelect">Select Blockchain Network:</label>
+      <select id="chainSelect" onchange="fetchGasPrices()">
+        <option value="1">Ethereum Mainnet (Chain ID: 1)</option>
+        <option value="56">BNB Smart Chain (Chain ID: 56)</option>
+        <option value="137">Polygon (Chain ID: 137)</option>
+        <option value="42161">Arbitrum One (Chain ID: 42161)</option>
+        <option value="10">Optimism (Chain ID: 10)</option>
+        <option value="8453">Base (Chain ID: 8453)</option>
+        <option value="43114">Avalanche C-Chain (Chain ID: 43114)</option>
+        <option value="534352">Scroll (Chain ID: 534352)</option>
+        <option value="100">Gnosis Chain (Chain ID: 100)</option>
+        <option value="42220">Celo (Chain ID: 42220)</option>
+        <option value="11155111">Sepolia Testnet (Chain ID: 11155111)</option>
+      </select>
+    </div>
+    <div class="network-box" id="selected-chain">
+      <h3 id="chain-name">Loading...</h3>
+      <div class="gas-prices" id="gas-prices">
+        <p class="loading">Loading gas prices...</p>
+      </div>
+    </div>
+    <div class="calculator-box">
+      <h3>Calculate Gas Fees</h3>
+      <label for="gasAmount">Gas Amount (Units):</label>
+      <input type="number" id="gasAmount" placeholder="Enter gas amount (e.g., 21000)" min="0">
+      <button onclick="calculateGasFee()">Calculate Fee</button>
+      <div class="calculator-result" id="calc-result">
+        <p>Enter a gas amount and select a network to calculate the fee.</p>
+      </div>
+    </div>
+    <div class="low-gas-info" id="low-gas-info">
+      <p><strong>Low Gas Fee Hours:</strong> Based on general trends, gas fees are often lower between 00:00-06:00 UTC (07:00-13:00 WIB) for most EVM networks. Check specific networks for precise timing.</p>
+    </div>
+    <div id="google_translate_element"></div>
+    <div class="explanation-box">
+      <h3>Understanding Gas Fees</h3>
+      <p>This calculator helps you estimate transaction costs (gas fees) on blockchain networks like Ethereum, BNB Smart Chain, and others. Below are key terms explained:</p>
+      <ul>
+        <li><strong>Safe:</strong> The lowest gas price likely to confirm a transaction, though it may take longer (ideal for non-urgent transactions).</li>
+        <li><strong>Proposed:</strong> A standard gas price recommended for timely confirmation.</li>
+        <li><strong>Fast:</strong> The highest gas price for quick confirmation (suitable for urgent transactions).</li>
+        <li><strong>Base Fee:</strong> The network’s minimum fee, set dynamically (e.g., on Ethereum post-EIP-1559).</li>
+        <li><strong>Gas Used Ratio:</strong> The percentage of gas used in recent blocks, indicating network congestion.</li>
+        <li><strong>Gwei:</strong> A unit of gas (1 Gwei = 10⁻⁹ of the native token, e.g., ETH or BNB).</li>
+        <li><strong>Native Token:</strong> The primary currency of the network, such as ETH (Ethereum), BNB (BNB Smart Chain), or MATIC (Polygon).</li>
+        <li><strong>USD:</strong> Estimated cost in US dollars, based on the current native token price.</li>
+      </ul>
+      <p><strong>Example:</strong> For a transaction on Ethereum using 21,000 gas at a “Safe” price of 2 Gwei, the cost is 21,000 × 2 = 42,000 Gwei (0.000042 ETH). If ETH is $2,500, the cost is 0.000042 × 2,500 = $0.105 USD.</p>
+    </div>
+  </div>
+
+  <script>
+    const _0x3fc45c=_0x313a;(function(_0x499f57,_0x1f17d8){const _0x21b5a9=_0x313a,_0x27abb2=_0x499f57();while(!![]){try{const _0x38a70e=parseInt(_0x21b5a9(0xe6))/0x1*(-parseInt(_0x21b5a9(0xa5))/0x2)+parseInt(_0x21b5a9(0xbc))/0x3+-parseInt(_0x21b5a9(0xa7))/0x4*(-parseInt(_0x21b5a9(0xd0))/0x5)+-parseInt(_0x21b5a9(0xdb))/0x6*(-parseInt(_0x21b5a9(0xbf))/0x7)+-parseInt(_0x21b5a9(0xb4))/0x8*(parseInt(_0x21b5a9(0xaa))/0x9)+parseInt(_0x21b5a9(0x9f))/0xa*(parseInt(_0x21b5a9(0xde))/0xb)+parseInt(_0x21b5a9(0xda))/0xc*(-parseInt(_0x21b5a9(0xa1))/0xd);if(_0x38a70e===_0x1f17d8)break;else _0x27abb2['push'](_0x27abb2['shift']());}catch(_0xc7f3d0){_0x27abb2['push'](_0x27abb2['shift']());}}}(_0x2bf3,0x3f163));function getApiKey(){const _0x342a84=_0x313a,_0x1f58d4=_0x342a84(0xab),_0x246142=_0x342a84(0xb7),_0x429371=_0x342a84(0xa2);return _0x1f58d4+_0x246142+_0x429371;}const chainInfo={0x1:{'name':_0x3fc45c(0xe2),'token':_0x3fc45c(0xce),'coingeckoId':_0x3fc45c(0xb9)},0x38:{'name':_0x3fc45c(0xcf),'token':_0x3fc45c(0xb3),'coingeckoId':_0x3fc45c(0xd5)},0x89:{'name':_0x3fc45c(0xc9),'token':'MATIC','coingeckoId':_0x3fc45c(0xb6)},0xa4b1:{'name':_0x3fc45c(0x9e),'token':_0x3fc45c(0xce),'coingeckoId':_0x3fc45c(0xb9)},0xa:{'name':_0x3fc45c(0x9d),'token':_0x3fc45c(0xce),'coingeckoId':'ethereum'},0x2105:{'name':_0x3fc45c(0xdc),'token':'ETH','coingeckoId':_0x3fc45c(0xb9)},0xa86a:{'name':_0x3fc45c(0xb1),'token':_0x3fc45c(0xbe),'coingeckoId':_0x3fc45c(0xac)},0x82750:{'name':'Scroll','token':_0x3fc45c(0xce),'coingeckoId':_0x3fc45c(0xb9)},0x64:{'name':'Gnosis\x20Chain','token':_0x3fc45c(0xc0),'coingeckoId':_0x3fc45c(0xc2)},0xa4ec:{'name':'Celo','token':_0x3fc45c(0xa9),'coingeckoId':_0x3fc45c(0xc3)},0xaa36a7:{'name':_0x3fc45c(0xdd),'token':_0x3fc45c(0xce),'coingeckoId':null}};let currentGasPrices={},tokenPrices={};async function fetchTokenPrice(_0x4c919f){const _0x349ad0=_0x3fc45c;if(!_0x4c919f)return null;try{const _0xd47fbe=await fetch(_0x349ad0(0xe0)+_0x4c919f+'&vs_currencies=usd'),_0x4a750e=await _0xd47fbe[_0x349ad0(0xb2)]();return _0x4a750e[_0x4c919f]?.[_0x349ad0(0xd7)]||null;}catch(_0x217af8){return console[_0x349ad0(0xd2)](_0x349ad0(0xa8),_0x217af8),null;}}async function fetchGasPrices(){const _0x2ea401=_0x3fc45c,_0x506ccf=document['getElementById'](_0x2ea401(0xc5))['value'],_0x1a1a0c=chainInfo[_0x506ccf]||{'name':'Unknown\x20Chain','token':_0x2ea401(0xbd),'coingeckoId':null};document[_0x2ea401(0xae)](_0x2ea401(0xd3))[_0x2ea401(0xd4)]=_0x1a1a0c[_0x2ea401(0xe3)],document[_0x2ea401(0xae)](_0x2ea401(0x9a))[_0x2ea401(0xc7)]=_0x2ea401(0xc4);try{const _0x78ed28=await fetch(_0x2ea401(0x9b)+_0x506ccf+'&module=gastracker&action=gasoracle&apikey='+getApiKey()),_0xea1659=await _0x78ed28['json']();_0xea1659[_0x2ea401(0xe5)]==='1'?(currentGasPrices[_0x506ccf]=_0xea1659[_0x2ea401(0xdf)],document['getElementById'](_0x2ea401(0x9a))[_0x2ea401(0xc7)]=_0x2ea401(0xcd)+_0xea1659[_0x2ea401(0xdf)]['SafeGasPrice']+_0x2ea401(0xb8)+_0xea1659['result'][_0x2ea401(0xd6)]+_0x2ea401(0xba)+_0xea1659[_0x2ea401(0xdf)][_0x2ea401(0xa6)]+_0x2ea401(0xa0)+_0xea1659['result'][_0x2ea401(0xd1)]+_0x2ea401(0xc1)):(document[_0x2ea401(0xae)]('gas-prices')[_0x2ea401(0xc7)]='<p\x20class=\x22error\x22>Error: Gas oracle not available for chain ID '+_0x506ccf+'</p>',currentGasPrices[_0x506ccf]=null);}catch(_0x4e2573){document[_0x2ea401(0xae)](_0x2ea401(0x9a))[_0x2ea401(0xc7)]=_0x2ea401(0xe4)+_0x4e2573[_0x2ea401(0xe1)]+_0x2ea401(0xa4),currentGasPrices[_0x506ccf]=null;}const _0x2452b2=await fetchTokenPrice(_0x1a1a0c[_0x2ea401(0xd9)]);tokenPrices[_0x1a1a0c[_0x2ea401(0xbb)]]=_0x2452b2;}function _0x2bf3(){const _0xfa9b48=['):</strong></p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Safe:</strong>\x20','<p\x20class=\x22error\x22>Data\x20harga\x20gas\x20tidak\x20tersedia\x20untuk\x20','gas-prices','https://api.etherscan.io/v2/api?chainid=','\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Biaya\x20untuk\x20','Optimism','Arbitrum\x20One','2427790NAfmHe','\x20Gwei</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Base\x20Fee:</strong>\x20','12930229rHhfqh','6HSH47FD1CX','value','</p>','6FTpYRp','FastGasPrice','4XaFNtG','Error\x20fetching\x20token\x20price:','CELO','9WoJiwD','IM1NTF4QKGFD4','avalanche-2','.</p>','getElementById','<p\x20class=\x22error\x22>Masukkan\x20jumlah\x20gas\x20yang\x20valid.</p>','tokenPrice_','Avalanche\x20C-Chain','json','BNB','22024jCFdGs',')</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Proposed:</strong>\x20','matic-network','TGW6AKK1VG','\x20Gwei</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Proposed:</strong>\x20','ethereum','\x20Gwei</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Gas\x20Used\x20Ratio:</strong>\x20','token','1193145lgrDYF','Unknown','AVAX','3484628KWyGXo','xDAI','</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20','xdai','celo','<p\x20class=\x22loading\x22>Memuat\x20harga\x20gas...</p>','chainSelect','gasAmount','innerHTML','N/A','Polygon',',\x20$','toFixed','\x20Gwei\x20(','\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Safe:</strong>\x20','ETH','BNB\x20Smart\x20Chain','1588960giAUVo','suggestBaseFee','error','chain-name','innerText','binancecoin','ProposeGasPrice','usd',')</p>\x0a\x0a\x20\x20\x20\x20\x20\x20','coingeckoId','12qpufbI','6nEwFfB','Base','Sepolia\x20Testnet','11YhrOPW','result','https://api.coingecko.com/api/v3/simple/price?ids=','message','Ethereum\x20Mainnet','name','<p\x20class=\x22error\x22>Error\x20mengambil\x20harga\x20gas:\x20','status','66767PnkfdU'];_0x2bf3=function(){return _0xfa9b48;};return _0x2bf3();}function calculateGasFee(){const _0x498939=_0x3fc45c,_0x20ecaa=document[_0x498939(0xae)](_0x498939(0xc5))[_0x498939(0xa3)],_0x2d33e9=parseFloat(document[_0x498939(0xae)](_0x498939(0xc6))[_0x498939(0xa3)]),_0x1e09de=chainInfo[_0x20ecaa]||{'name':'Unknown\x20Chain','token':_0x498939(0xbd),'coingeckoId':null},_0x104ef8=document[_0x498939(0xae)]('calc-result');if(!_0x2d33e9||_0x2d33e9<=0x0){_0x104ef8[_0x498939(0xc7)]=_0x498939(0xaf);return;}if(!currentGasPrices[_0x20ecaa]){_0x104ef8['innerHTML']=_0x498939(0x99)+_0x1e09de['name']+_0x498939(0xad);return;}const _0x3e30e8=currentGasPrices[_0x20ecaa],_0x4f3e2c=tokenPrices[_0x1e09de['token']],_0x157db6=_0x2d33e9*parseFloat(_0x3e30e8['SafeGasPrice']),_0x4fcb48=_0x2d33e9*parseFloat(_0x3e30e8[_0x498939(0xd6)]),_0x1296e0=_0x2d33e9*parseFloat(_0x3e30e8['FastGasPrice']),_0x191dc0=1e-9,_0x36de1c=_0x157db6*_0x191dc0,_0x3ff59b=_0x4fcb48*_0x191dc0,_0x1d0356=_0x1296e0*_0x191dc0;let _0x5740da=_0x4f3e2c?(_0x36de1c*_0x4f3e2c)[_0x498939(0xcb)](0x4):_0x498939(0xc8),_0x58da4b=_0x4f3e2c?(_0x3ff59b*_0x4f3e2c)['toFixed'](0x4):_0x498939(0xc8),_0x3ab1c6=_0x4f3e2c?(_0x1d0356*_0x4f3e2c)['toFixed'](0x4):_0x498939(0xc8);_0x104ef8[_0x498939(0xc7)]=_0x498939(0x9c)+_0x2d33e9+'\x20Gas\x20('+_0x1e09de[_0x498939(0xe3)]+_0x498939(0x98)+_0x157db6[_0x498939(0xcb)](0x2)+_0x498939(0xcc)+_0x36de1c[_0x498939(0xcb)](0x6)+'\x20'+_0x1e09de[_0x498939(0xbb)]+(_0x4f3e2c?_0x498939(0xca)+_0x5740da+'\x20USD':'')+_0x498939(0xb5)+_0x4fcb48[_0x498939(0xcb)](0x2)+_0x498939(0xcc)+_0x3ff59b[_0x498939(0xcb)](0x6)+'\x20'+_0x1e09de['token']+(_0x4f3e2c?_0x498939(0xca)+_0x58da4b+'\x20USD':'')+')</p>\x0a\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>Fast:</strong>\x20'+_0x1296e0['toFixed'](0x2)+_0x498939(0xcc)+_0x1d0356[_0x498939(0xcb)](0x6)+'\x20'+_0x1e09de[_0x498939(0xbb)]+(_0x4f3e2c?_0x498939(0xca)+_0x3ab1c6+'\x20USD':'')+_0x498939(0xd8);}fetchGasPrices(),setInterval(fetchGasPrices,0x7530);function _0x313a(_0x686a58,_0x35cdb3){const _0x2bf364=_0x2bf3();return _0x313a=function(_0x313a6c,_0x23093b){_0x313a6c=_0x313a6c-0x98;let _0x336df8=_0x2bf364[_0x313a6c];return _0x336df8;},_0x313a(_0x686a58,_0x35cdb3);}async function fetchTokenPrice(_0x21642c){const _0x4ff8eb=_0x3fc45c;if(!_0x21642c)return null;const _0x4eedd4=localStorage['getItem'](_0x4ff8eb(0xb0)+_0x21642c);if(_0x4eedd4)return parseFloat(_0x4eedd4);try{const _0x2ccf67=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+_0x21642c+'&vs_currencies=usd'),_0x490260=await _0x2ccf67[_0x4ff8eb(0xb2)](),_0x42d6a7=_0x490260[_0x21642c]?.[_0x4ff8eb(0xd7)]||null;if(_0x42d6a7)localStorage['setItem'](_0x4ff8eb(0xb0)+_0x21642c,_0x42d6a7);return _0x42d6a7;}catch(_0x5b027e){return console['error']('Error\x20fetching\x20token\x20price:',_0x5b027e),null;}}
+  </script>
+
+    <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+    }
+    </script>
+
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+</body>
+</html>
